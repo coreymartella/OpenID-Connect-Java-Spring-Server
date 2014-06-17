@@ -42,9 +42,9 @@
   </modules>
     
 	<scm>
-		<connection>scm:git:https://github.com/Miovision/OpenID-Connect-Java-Spring-Server.git</connection>
-		<developerConnection>scm:git:git@github.com:Miovision/OpenID-Connect-Java-Spring-Server.git</developerConnection>
-		<url>https://github.com/Miovision/OpenID-Connect-Java-Spring-Server.git</url>
+		<connection>scm:git:https://github.com/mitreid-connect/OpenID-Connect-Java-Spring-Server.git</connection>
+		<developerConnection>scm:git:git@github.com:mitreid-connect/OpenID-Connect-Java-Spring-Server.git</developerConnection>
+		<url>https://github.com/mitreid-connect/OpenID-Connect-Java-Spring-Server.git</url>
 		<tag>HEAD</tag>
 	</scm>
 
