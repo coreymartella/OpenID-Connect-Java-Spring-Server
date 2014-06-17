@@ -152,6 +152,38 @@ public class TestSignedAuthRequestUrlBuilder {
 		}
 	}
 
+	/**
+	 * This test takes the URI from the result of building a signed request
+	 * and checks that the JWS object parsed from the request URI matches up
+	 * with the expected claim values.
+	 */
+	@Test
+	public void buildAuthRequestUrlWithMissingParams() {
+		String requestUri = urlBuilder.buildAuthRequestUrl(serverConfig, clientConfig, redirectUri, null, state, options);
+
+		// parsing the result
+		UriComponentsBuilder builder = null;
+
+		try {
+			builder = UriComponentsBuilder.fromUri(new URI(requestUri));
+		} catch (URISyntaxException e1) {
+			fail("URISyntaxException was thrown.");
+		}
+
+		UriComponents components = builder.build();
+		String jwtString = components.getQueryParams().get("request").get(0);
+		ReadOnlyJWTClaimsSet claims = null;
+
+		try {
+			SignedJWT jwt = SignedJWT.parse(jwtString);
+			claims = jwt.getJWTClaimsSet();
+		} catch (ParseException e) {
+			fail("ParseException was thrown.");
+		}
+
+		assertEquals(null, claims.getClaim("nonce"));
+	}
+
 	@Test(expected = AuthenticationServiceException.class)
 	public void buildAuthRequestUrl_badUri() {
 
