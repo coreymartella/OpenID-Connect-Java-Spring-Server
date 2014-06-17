@@ -53,22 +53,22 @@ public class SignedAuthRequestUrlBuilder implements AuthRequestUrlBuilder {
 		JWTClaimsSet claims = new JWTClaimsSet();
 
 		//set parameters to JwtClaims
-		claims.setClaim("response_type", "code");
-		claims.setClaim("client_id", clientConfig.getClientId());
-		claims.setClaim("scope", Joiner.on(" ").join(clientConfig.getScope()));
+		setClaimIfNecessary(claims, "response_type", "code");
+		setClaimIfNecessary(claims, "client_id", clientConfig.getClientId());
+		setClaimIfNecessary(claims, "scope", Joiner.on(" ").join(clientConfig.getScope()));
 
 		// build our redirect URI
-		claims.setClaim("redirect_uri", redirectUri);
+		setClaimIfNecessary(claims, "redirect_uri", redirectUri);
 
 		// this comes back in the id token
-		claims.setClaim("nonce", nonce);
+		setClaimIfNecessary(claims, "nonce", nonce);
 
 		// this comes back in the auth request return
-		claims.setClaim("state", state);
+		setClaimIfNecessary(claims, "state", state);
 
 		// Optional parameters
 		for (Entry<String, String> option : options.entrySet()) {
-			claims.setClaim(option.getKey(), option.getValue());
+			setClaimIfNecessary(claims, option.getKey(), option.getValue());
 		}
 
 
@@ -101,5 +101,14 @@ public class SignedAuthRequestUrlBuilder implements AuthRequestUrlBuilder {
 	public void setSigningAndValidationService(JwtSigningAndValidationService signingAndValidationService) {
 		this.signingAndValidationService = signingAndValidationService;
 	}
+
+    /**
+     * A helper function to help avoid null params.
+     */
+    protected void setClaimIfNecessary(JWTClaimsSet claims, String paramName, String param) {
+        if(paramName != null && param != null) {
+            claims.setClaim(paramName, param);
+        }
+    }
 
 }

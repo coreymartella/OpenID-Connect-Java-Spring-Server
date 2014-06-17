@@ -48,19 +48,19 @@ public class PlainAuthRequestUrlBuilder implements AuthRequestUrlBuilder {
 		try {
 
 			URIBuilder uriBuilder = new URIBuilder(serverConfig.getAuthorizationEndpointUri());
-			uriBuilder.addParameter("response_type", "code");
-			uriBuilder.addParameter("client_id", clientConfig.getClientId());
-			uriBuilder.addParameter("scope", Joiner.on(" ").join(clientConfig.getScope()));
+			addParameterIfNecessary(uriBuilder, "response_type", "code");
+			addParameterIfNecessary(uriBuilder, "client_id", clientConfig.getClientId());
+			addParameterIfNecessary(uriBuilder, "scope", Joiner.on(" ").join(clientConfig.getScope()));
 
-			uriBuilder.addParameter("redirect_uri", redirectUri);
+			addParameterIfNecessary(uriBuilder, "redirect_uri", redirectUri);
 
-			uriBuilder.addParameter("nonce", nonce);
+			addParameterIfNecessary(uriBuilder, "nonce", nonce);
 
-			uriBuilder.addParameter("state", state);
+			addParameterIfNecessary(uriBuilder, "state", state);
 
 			// Optional parameters:
 			for (Entry<String, String> option : options.entrySet()) {
-				uriBuilder.addParameter(option.getKey(), option.getValue());
+				addParameterIfNecessary(uriBuilder, option.getKey(), option.getValue());
 			}
 
 			return uriBuilder.build().toString();
@@ -74,4 +74,12 @@ public class PlainAuthRequestUrlBuilder implements AuthRequestUrlBuilder {
 
 	}
 
+    /**
+     * A helper function to help avoid null params.
+     */
+    protected void addParameterIfNecessary(URIBuilder uriBuilder, String paramName, String param) {
+        if(paramName != null && param != null) {
+            uriBuilder.addParameter(paramName, param);
+        }
+    }
 }

@@ -94,6 +94,9 @@ public class OIDCAuthenticationFilter extends AbstractAuthenticationProcessingFi
 	// Allow for time sync issues by having a window of X seconds.
 	private int timeSkewAllowance = 300;
 
+    // Allow disabling of the nonce for some issuers (eg. accounts.google.com)
+    private boolean disableNonce = false; 
+
 	@Autowired
 	private JWKSetCacheService validationServices;
 
@@ -238,7 +241,10 @@ public class OIDCAuthenticationFilter extends AbstractAuthenticationProcessingFi
 			session.setAttribute(REDIRECT_URI_SESION_VARIABLE, redirectUri);
 
 			// this value comes back in the id token and is checked there
-			String nonce = createNonce(session);
+			String nonce = null;
+            if(!disableNonce) {
+               nonce = createNonce(session);
+            }
 
 			// this value comes back in the auth code response
 			String state = createState(session);
@@ -496,24 +502,26 @@ public class OIDCAuthenticationFilter extends AbstractAuthenticationProcessingFi
 					throw new AuthenticationServiceException("Audience does not match, expected " + clientConfig.getClientId() + " got " + idClaims.getAudience());
 				}
 
-				// compare the nonce to our stored claim
-				String nonce = idClaims.getStringClaim("nonce");
-				if (Strings.isNullOrEmpty(nonce)) {
+				// compare the nonce to our stored claim, if we sent one
+                if(!disableNonce) {
+                    String nonce = idClaims.getStringClaim("nonce");
+                    if (Strings.isNullOrEmpty(nonce)) {
 
-					logger.error("ID token did not contain a nonce claim.");
+                        logger.error("ID token did not contain a nonce claim.");
 
-					throw new AuthenticationServiceException("ID token did not contain a nonce claim.");
-				}
+                        throw new AuthenticationServiceException("ID token did not contain a nonce claim.");
+                    }
 
-				String storedNonce = getStoredNonce(session);
-				if (!nonce.equals(storedNonce)) {
-					logger.error("Possible replay attack detected! The comparison of the nonce in the returned "
-							+ "ID Token to the session " + NONCE_SESSION_VARIABLE + " failed. Expected " + storedNonce + " got " + nonce + ".");
+                    String storedNonce = getStoredNonce(session);
+                    if (!nonce.equals(storedNonce)) {
+                        logger.error("Possible replay attack detected! The comparison of the nonce in the returned "
+                                     + "ID Token to the session " + NONCE_SESSION_VARIABLE + " failed. Expected " + storedNonce + " got " + nonce + ".");
 
-					throw new AuthenticationServiceException(
-							"Possible replay attack detected! The comparison of the nonce in the returned "
-									+ "ID Token to the session " + NONCE_SESSION_VARIABLE + " failed. Expected " + storedNonce + " got " + nonce + ".");
-				}
+                        throw new AuthenticationServiceException(
+                            "Possible replay attack detected! The comparison of the nonce in the returned "
+                            + "ID Token to the session " + NONCE_SESSION_VARIABLE + " failed. Expected " + storedNonce + " got " + nonce + ".");
+                    }
+                }
 
 				// pull the subject (user id) out as a claim on the id_token
 
@@ -576,8 +584,8 @@ public class OIDCAuthenticationFilter extends AbstractAuthenticationProcessingFi
 	 * @return
 	 */
 	protected static String createNonce(HttpSession session) {
-		String nonce = new BigInteger(50, new SecureRandom()).toString(16);
-		session.setAttribute(NONCE_SESSION_VARIABLE, nonce);
+        String nonce = new BigInteger(50, new SecureRandom()).toString(16);
+        session.setAttribute(NONCE_SESSION_VARIABLE, nonce);
 
 		return nonce;
 	}
@@ -669,6 +677,20 @@ public class OIDCAuthenticationFilter extends AbstractAuthenticationProcessingFi
 	public void setTimeSkewAllowance(int timeSkewAllowance) {
 		this.timeSkewAllowance = timeSkewAllowance;
 	}
+
+	/**
+	 * @return if we should send a nonce
+	 */
+    public boolean getDisableNonce() {
+        return disableNonce;
+    }
+
+	/**
+	 * @param disableNonce if true, we should send a nonce
+	 */
+    public void setDisableNonce(boolean disableNonce) {
+        this.disableNonce = disableNonce;
+    }
 
 	/**
 	 * @return the validationServices
