@@ -38,6 +38,48 @@ import com.google.gson.JsonParser;
  * @author jricher
  *
  */
-public interface UserInfoFetcher {
-	UserInfo loadUserInfo(OIDCAuthenticationToken token); 
+public class DefaultUserInfoFetcher implements UserInfoFetcher {
+
+	private Logger logger = LoggerFactory.getLogger(UserInfoFetcher.class);
+
+    @Override
+	public UserInfo loadUserInfo(OIDCAuthenticationToken token) {
+
+		ServerConfiguration serverConfiguration = token.getServerConfiguration();
+
+		if (serverConfiguration == null) {
+			logger.warn("No server configuration found.");
+			return null;
+		}
+
+		if (Strings.isNullOrEmpty(serverConfiguration.getUserInfoUri())) {
+			logger.warn("No userinfo endpoint, not fetching.");
+			return null;
+		}
+
+		// if we got this far, try to actually get the userinfo
+		HttpClient httpClient = new SystemDefaultHttpClient();
+
+		HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
+
+		RestTemplate restTemplate = new RestTemplate(factory);
+
+		MultiValueMap<String, String> form = new LinkedMultiValueMap<String, String>();
+		form.add("access_token", token.getAccessTokenValue());
+
+		try {
+			String userInfoString = restTemplate.postForObject(serverConfiguration.getUserInfoUri(), form, String.class);
+
+			JsonObject userInfoJson = new JsonParser().parse(userInfoString).getAsJsonObject();
+
+			UserInfo userInfo = DefaultUserInfo.fromJson(userInfoJson);
+
+			return userInfo;
+		} catch (Exception e) {
+			logger.warn("Error fetching userinfo", e);
+			return null;
+		}
+
+	}
+
 }
